@@ -1,1 +1,6 @@
 venv/
+*.pyc
+*.bak
+*.dat
+*.dir
+*.log
