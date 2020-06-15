@@ -40,21 +40,21 @@ func dummyBlog(w http.ResponseWriter, req *http.Request) {
 
 	feed.Items = []*feeds.Item{
 		&feeds.Item{
-			Title:       "Limiting Concurrency in Go",
-			Link:        &feeds.Link{Href: "http://jmoiron.net/blog/limiting-concurrency-in-go/"},
-			Description: "A discussion on controlled parallelism in golang",
-			Author:      &feeds.Author{Name: "Jason Moiron", Email: "jmoiron@jmoiron.net"},
+			Title:       "Testing something with Golang",
+			Link:        &feeds.Link{Href: "https://example.com/testing-something/"},
+			Description: "Testing a cool Golang program to develop a Errbot plugin",
+			Author:      &feeds.Author{Name: "Any Body", Email: "any.body@example.com"},
 			Created:     now,
 		},
 		&feeds.Item{
-			Title:       "Logic-less Template Redux",
-			Link:        &feeds.Link{Href: "http://jmoiron.net/blog/logicless-template-redux/"},
-			Description: "More thoughts on logicless templates",
+			Title:       "The banana-apple problem",
+			Link:        &feeds.Link{Href: "https://example.com/banana-apple-problem/"},
+			Description: "More thoughts on problems with apples and bananas.",
 			Created:     now,
 		},
 		&feeds.Item{
-			Title:       "Idiomatic Code Reuse in Go",
-			Link:        &feeds.Link{Href: "http://jmoiron.net/blog/idiomatic-code-reuse-in-go/"},
+			Title:       "Fun with flags",
+			Link:        &feeds.Link{Href: "https://example.com/fun-with-flags/"},
 			Description: "How to use interfaces <em>effectively</em>",
 			Created:     now,
 		},
