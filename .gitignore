@@ -4,3 +4,9 @@ venv/
 *.dat
 *.dir
 *.log
+
+# Ignore executable files
+*.exe
+
+# Vscode files
+.vscode/
