@@ -10,3 +10,6 @@ venv/
 
 # Vscode files
 .vscode/
+
+# Sqlite file
+*.db
