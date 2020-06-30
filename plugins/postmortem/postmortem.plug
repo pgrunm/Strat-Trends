@@ -1,0 +1,13 @@
+[Core]
+name = postmortem
+module = postmortem
+
+[Documentation]
+description = A plugin to create and view postmortems.
+
+[Python]
+version = 3
+
+[Errbot]
+min = 6.1.4
+
