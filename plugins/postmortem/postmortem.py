@@ -15,36 +15,6 @@ class Postmortem(BotPlugin):
         """
         super(Postmortem, self).activate()
 
-        # Create the postmortem database
-        # Create a database connection and a cursor for executing commands.
-        conn = sqlite3.connect('postmortem.db')
-        c = conn.cursor()
-
-        try:
-            # Create database with tables
-            c.executescript('''
-            CREATE TABLE "Sources" (
-            "source_id"	INTEGER,
-            "url"	TEXT, 
-            "last_access_timestamp"	TEXT, 
-            "http_status_code"	INTEGER, 
-            PRIMARY KEY("source_id"));
-            
-            CREATE TABLE "Postmortems" (
-            "content"	TEXT,
-            "fk_source_id"	INTEGER,
-            "postmortem_id" INTEGER,
-            FOREIGN KEY("fk_source_id") REFERENCES "Sources"("source_id"),
-            PRIMARY KEY("postmortem_id"));
-            ''')
-
-            # close the database connection
-            conn.commit()
-
-        except sqlite3.OperationalError as oe:
-            self.log.error(f'Error occured while creating database: {oe}')
-        conn.close()
-
     def deactivate(self):
         """
         Triggers on plugin deactivation
@@ -113,3 +83,39 @@ class Postmortem(BotPlugin):
             return f'Hello {args.name}, I hear your favorite number is {args.favorite_number}.'
 
     # Own functions
+    @staticmethod
+    def create_postmortem_database():
+        # Create the postmortem database
+        # Create a database connection and a cursor for executing commands.
+        conn = sqlite3.connect('postmortem.db')
+        c = conn.cursor()
+
+        try:
+            # Create database with tables
+            c.executescript('''
+            CREATE TABLE "Sources" (
+            "source_id"	INTEGER,
+            "url"	TEXT, 
+            "last_access_timestamp"	TEXT, 
+            "http_status_code"	INTEGER, 
+            PRIMARY KEY("source_id"));
+            
+            CREATE TABLE "Postmortems" (
+            "content"	TEXT,
+            "fk_source_id"	INTEGER,
+            "postmortem_id" INTEGER,
+            FOREIGN KEY("fk_source_id") REFERENCES "Sources"("source_id"),
+            PRIMARY KEY("postmortem_id"));
+            ''')
+
+            # close the database connection
+            conn.commit()
+
+        except sqlite3.OperationalError as oe:
+            # errbot.log.error(f'Error occured while creating database: {oe}')
+            pass
+        conn.close()
+
+    @staticmethod
+    def test_message():
+        return 'muh'
