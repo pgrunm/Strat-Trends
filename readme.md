@@ -15,3 +15,4 @@ errbot -–new-plugin
 ## Plugin documentation
 
 - [ErrBot Plugin Development](https://errbot.readthedocs.io/en/latest/user_guide/plugin_development/development_environment.html#)
+- [ErrBot Plugin Testing](https://errbot.readthedocs.io/en/latest/user_guide/plugin_development/testing.html)

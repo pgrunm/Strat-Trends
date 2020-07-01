@@ -2,3 +2,4 @@ newspaper3k
 errbot
 python-telegram-bot
 feedparser
+pytest
