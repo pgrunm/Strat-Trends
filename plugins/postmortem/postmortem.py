@@ -99,11 +99,11 @@ class Postmortem(BotPlugin):
             c.executescript('''
             CREATE TABLE "Sources" (
             "source_id"	INTEGER,
-            "url"	TEXT, 
-            "last_access_timestamp"	TEXT, 
-            "http_status_code"	INTEGER, 
+            "url"	TEXT,
+            "last_access_timestamp"	TEXT,
+            "http_status_code"	INTEGER,
             PRIMARY KEY("source_id"));
-            
+
             CREATE TABLE "Postmortems" (
             "content"	TEXT,
             "fk_source_id"	INTEGER,
@@ -119,3 +119,32 @@ class Postmortem(BotPlugin):
             raise sqlite3.OperationalError(
                 f'Error occured while creating database: {oe}')
         conn.close()
+
+    # Feed related commands
+    @botcmd
+    def feeds(self):
+        """
+        A command to display all current feeds. Alias for /feed list
+        """
+        self.feed_list()
+
+    @botcmd
+    def feed_list(self):
+        """
+        A command to display all current feeds.
+        """
+        pass
+
+    @botcmd
+    def feed_add(self):
+        """
+        Command allows to add new feeds.
+        """
+        pass
+
+    @botcmd
+    def feed_delete(self):
+        """
+        Command allows to remove feeds.
+        """
+        pass
