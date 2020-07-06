@@ -16,3 +16,13 @@ errbot -–new-plugin
 
 - [ErrBot Plugin Development](https://errbot.readthedocs.io/en/latest/user_guide/plugin_development/development_environment.html#)
 - [ErrBot Plugin Testing](https://errbot.readthedocs.io/en/latest/user_guide/plugin_development/testing.html)
+
+## How to Errbot
+
+### Args
+
+The command /example abc def gives you `abc` and `def` as list in args.
+
+### Markdown templates
+
+See the [Errbot docs](https://errbot.readthedocs.io/en/latest/user_guide/plugin_development/messaging.html#templating) for more information on how to use templates.
