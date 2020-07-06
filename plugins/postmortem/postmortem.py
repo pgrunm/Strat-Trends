@@ -14,6 +14,10 @@ class Postmortem(BotPlugin):
         You should delete it if you're not using it to override any default behaviour
         """
         super(Postmortem, self).activate()
+        try:
+            Postmortem.create_postmortem_database()
+        except sqlite3.OperationalError as oe:
+            self.log.error(f'Error while creating the database: {oe}')
 
     def deactivate(self):
         """
@@ -112,8 +116,8 @@ class Postmortem(BotPlugin):
             conn.commit()
 
         except sqlite3.OperationalError as oe:
-            # errbot.log.error(f'Error occured while creating database: {oe}')
-            pass
+            raise sqlite3.OperationalError(
+                f'Error occured while creating database: {oe}')
         conn.close()
 
     @staticmethod
