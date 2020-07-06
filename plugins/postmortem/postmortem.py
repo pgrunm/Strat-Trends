@@ -119,7 +119,3 @@ class Postmortem(BotPlugin):
             raise sqlite3.OperationalError(
                 f'Error occured while creating database: {oe}')
         conn.close()
-
-    @staticmethod
-    def test_message():
-        return 'muh'
