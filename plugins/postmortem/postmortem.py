@@ -1,5 +1,6 @@
 from errbot import BotPlugin, botcmd, arg_botcmd, webhook, logging
 import sqlite3
+import urllib3
 
 
 class Postmortem(BotPlugin):
@@ -19,12 +20,17 @@ class Postmortem(BotPlugin):
         except sqlite3.OperationalError as oe:
             self.log.error(f'Error while creating the database: {oe}')
 
+        # Create variables for execution statements etc.
+        self.conn = sqlite3.connect('postmortem.db', check_same_thread=False)
+        self.c = self.conn.cursor()
+
     def deactivate(self):
         """
         Triggers on plugin deactivation
 
         You should delete it if you're not using it to override any default behaviour
         """
+        self.conn.close()
         super(Postmortem, self).deactivate()
 
     def get_configuration_template(self):
@@ -98,18 +104,17 @@ class Postmortem(BotPlugin):
             # Create database with tables
             c.executescript('''
             CREATE TABLE "Sources" (
-            "source_id"	INTEGER,
+            "source_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
             "url"	TEXT,
             "last_access_timestamp"	TEXT,
             "http_status_code"	INTEGER,
-            PRIMARY KEY("source_id"));
+            PRIMARY KEY("source_id"));  
 
             CREATE TABLE "Postmortems" (
             "content"	TEXT,
             "fk_source_id"	INTEGER,
-            "postmortem_id" INTEGER,
-            FOREIGN KEY("fk_source_id") REFERENCES "Sources"("source_id"),
-            PRIMARY KEY("postmortem_id"));
+            "postmortem_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+            FOREIGN KEY("fk_source_id") REFERENCES "Sources"("source_id"));
             ''')
 
             # close the database connection
@@ -136,11 +141,45 @@ class Postmortem(BotPlugin):
         pass
 
     @botcmd
-    def feed_add(self):
+    def feed_add(self, msg, args):
         """
         Command allows to add new feeds.
         """
-        pass
+        self.log.debug(f'Arguments are: {args}.')
+        url = urllib3.util.parse_url(args)
+        if url.host == None:
+            return f'Please use /feed add <URL> to add a new feed.'
+
+        # Check if url is already in database
+        self.c.execute(
+            'SELECT DISTINCT URL FROM SOURCES WHERE url=?', (url.host,))
+        result = self.c.fetchone()
+
+        if result != None:
+            self.log.warning(f'Url {url.host} already in database')
+            return f'URL {url.host} is already saved to database. Feel free to add a different one.'
+        elif self.c != None:
+            # Try to retrieve the url
+            http = urllib3.PoolManager(timeout=3.0)
+            try:
+                response = http.request('GET', args)
+            except urllib3.exceptions.MaxRetryError as read_err:
+                self.log.critical(
+                    f'Could not access url {url} while adding it, error: {read_err}')
+            if response.status == 200:
+                # Insert a row of data: url, last_access, http_status_code
+                try:
+                    # Null works with auto increment
+                    self.c.execute(
+                        f"INSERT INTO Sources VALUES (NULL, '{args}', 'Unknown', 200)")
+                    # Save (commit) the changes
+                    self.conn.commit()
+                except sqlite3.Error as sqlite_error:
+                    self.log.error(
+                        f'Error while saving to database: {sqlite_error}')
+                else:
+                    self.log.info(f'Successfully saved {args} to database.')
+                    return f'URL {args} saved to database.'
 
     @botcmd
     def feed_delete(self):
