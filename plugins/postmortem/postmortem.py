@@ -1,6 +1,8 @@
-from errbot import BotPlugin, botcmd, arg_botcmd, webhook, logging
 import sqlite3
+
+import certifi
 import urllib3
+from errbot import BotPlugin, arg_botcmd, botcmd, logging, webhook
 
 
 class Postmortem(BotPlugin):
@@ -160,12 +162,16 @@ class Postmortem(BotPlugin):
             return f'URL {url.host} is already saved to database. Feel free to add a different one.'
         elif self.c != None:
             # Try to retrieve the url
-            http = urllib3.PoolManager(timeout=3.0)
+            http = urllib3.PoolManager(
+                timeout=3.0, cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
             try:
                 response = http.request('GET', args)
             except urllib3.exceptions.MaxRetryError as read_err:
                 self.log.critical(
                     f'Could not access url {url} while adding it, error: {read_err}')
+            # SSL Error
+            except urllib3.exceptions.SSLError as tls_err:
+                self.log.critical(f'TLS verification error occure: {tls_err}')
             if response.status == 200:
                 # Insert a row of data: url, last_access, http_status_code
                 try:
@@ -181,7 +187,7 @@ class Postmortem(BotPlugin):
                     self.log.info(f'Successfully saved {args} to database.')
                     return f'URL {args} saved to database.'
 
-    @botcmd
+    @ botcmd
     def feed_delete(self):
         """
         Command allows to remove feeds.
