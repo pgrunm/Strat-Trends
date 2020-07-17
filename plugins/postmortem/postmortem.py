@@ -152,7 +152,7 @@ class Postmortem(BotPlugin):
 
         # Build a string to return
         for source_id, url in query:
-            query_string += f'ID {source_id}: URL {url}\n'
+            query_string += f'ID {source_id}: {url}\n'
 
         self.log.debug(f'Query string value is {query_string}')
         return query_string
