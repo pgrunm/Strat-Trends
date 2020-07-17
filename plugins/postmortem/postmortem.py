@@ -129,18 +129,31 @@ class Postmortem(BotPlugin):
 
     # Feed related commands
     @botcmd
-    def feeds(self):
+    def feeds(self, msg, args):
         """
         A command to display all current feeds. Alias for /feed list
         """
-        self.feed_list()
+        # Call the /feed list function and return it's values.
+        return self.feed_list(msg, args)
 
     @botcmd
-    def feed_list(self):
+    def feed_list(self, msg, args):
         """
         A command to display all current feeds.
         """
-        pass
+        self.c.execute('select source_id, url from Sources;')
+
+        # Fetch all rows
+        query = self.c.fetchall()
+        self.log.debug(f'Query returned: {query}')
+        query_string = 'Currently subscribed feeds:'
+
+        # Build a string to return
+        for source_id, url in query:
+            query_string += f'ID {source_id}: URL {url}\n'
+
+        self.log.debug(f'Query string value is {query_string}')
+        return query_string
 
     @botcmd
     def feed_add(self, msg, args):
