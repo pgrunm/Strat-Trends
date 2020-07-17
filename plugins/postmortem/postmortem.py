@@ -148,7 +148,7 @@ class Postmortem(BotPlugin):
         # Fetch all rows
         query = self.c.fetchall()
         self.log.debug(f'Query returned: {query}')
-        query_string = 'Currently subscribed feeds:'
+        query_string = 'Currently subscribed feeds:\n'
 
         # Build a string to return
         for source_id, url in query:
