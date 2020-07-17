@@ -133,6 +133,8 @@ class Postmortem(BotPlugin):
         """
         A command to display all current feeds. Alias for /feed list
         """
+        self.log.debug(
+            'Called the feeds commands and calling feeds_list function.')
         # Call the /feed list function and return it's values.
         return self.feed_list(msg, args)
 
