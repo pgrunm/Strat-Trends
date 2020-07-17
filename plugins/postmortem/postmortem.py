@@ -203,8 +203,35 @@ class Postmortem(BotPlugin):
                     return f'URL {args} saved to database.'
 
     @ botcmd
-    def feed_delete(self):
+    def feed_delete(self, msg, args):
         """
         Command allows to remove feeds.
         """
-        pass
+        # Check if the supplied parameter is of the type integer
+        self.log.debug(f'Type of the supplied args: {type(args)}')
+
+        if len(args) == 0:
+            self.log.debug(f'Length of args: {len(args)}')
+            return f'Use /feed delete <ID> to delete a subscribed feed.'
+
+        # Variable for the url id
+        url_id = 0
+
+        # Try to parse the supplied args
+        try:
+            url_id = int(args)
+        except ValueError:
+            # Supplied args are not parseable to type int.
+            self.log.critical(
+                f'Can not convert supplied args {args} to type int!')
+            return f'You need to enter a number as parameter!'
+        else:
+            try:
+                self.c.execute(
+                    'delete from Sources where source_id = ?;', (url_id,))
+            except sqlite3.Error as sql_err:
+                self.log.debug(f'SQLite error occured: {sql_err}')
+            else:
+                # Commit the changes.
+                self.conn.commit()
+                return f'Succesfully deleted feed id {args}!'
