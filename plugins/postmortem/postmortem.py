@@ -3,6 +3,8 @@ import sqlite3
 import certifi
 import urllib3
 from errbot import BotPlugin, arg_botcmd, botcmd, logging, webhook
+import asyncio
+import feedparser
 
 
 class Postmortem(BotPlugin):
@@ -110,7 +112,7 @@ class Postmortem(BotPlugin):
             "url"	TEXT,
             "last_access_timestamp"	TEXT,
             "http_status_code"	INTEGER,
-            PRIMARY KEY("source_id"));  
+            PRIMARY KEY("source_id"));
 
             CREATE TABLE "Postmortems" (
             "content"	TEXT,
@@ -202,7 +204,7 @@ class Postmortem(BotPlugin):
                     self.log.info(f'Successfully saved {args} to database.')
                     return f'URL {args} saved to database.'
 
-    @ botcmd
+    @botcmd
     def feed_delete(self, msg, args):
         """
         Command allows to remove feeds.
@@ -235,3 +237,39 @@ class Postmortem(BotPlugin):
                 # Commit the changes.
                 self.conn.commit()
                 return f'Succesfully deleted feed id {args}!'
+
+    @botcmd
+    def feed_get(self, msg, args):
+        """
+        A command to retrieve all currently subscribed feeds.
+        """
+        self.c.execute('select source_id, url from Sources;')
+
+        # Fetch all rows
+        try:
+            query = self.c.fetchall()
+            self.log.debug(f'Query returned: {query}')
+        except sqlite3.Error as sqlite_error:
+            self.log.critical(
+                f'Error occured while retrieving all rows: {sqlite_error}')
+
+        # Download the Entries
+        feeds = asyncio.new_event_loop().run_until_complete(
+            Postmortem.retrieve_feeds(query))
+        self.log.debug(f'Downloaded entries: {len(feeds)}')
+
+        # Iterate over the entries...
+        pass
+
+    @staticmethod
+    async def retrieve_feeds(sites):
+        tasks = []
+        for _, url in sites:
+            task = asyncio.ensure_future(Postmortem.download_site(url))
+            tasks.append(task)
+        liste = await asyncio.gather(*tasks, return_exceptions=True)
+        return liste
+
+    @staticmethod
+    async def download_site(url):
+        return feedparser.parse(url)
