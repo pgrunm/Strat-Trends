@@ -34,31 +34,31 @@ if __name__ == "__main__":
 
     example_url = 'http://127.0.0.1:8020/blog'
     d = feedparser.parse(example_url)
+    if d['bozo'] != 1:
+        # HTTP Status Code loggen...
+        logging.debug(f'HTTP Status Code der Feed Abfrage ist {d["status"]}')
 
-    # HTTP Status Code loggen...
-    logging.debug(f'HTTP Status Code der Feed Abfrage ist {d["status"]}')
+        if d['status'] == 200:
+            # HTTP Status Code loggen
+            logging.info('HTTP Status ist 200')
 
-    if d['status'] == 200:
-        # HTTP Status Code loggen
-        logging.info('HTTP Status ist 200')
-
-        # Gehe durch die Feed Einträge.
-        for x in d['entries']:
-            # print(json.dumps(x, indent=4, sort_keys=True))
-            print(x['title'])
-            print(x['link'])
-        ''' 
-        Offen:
-        URL-ID
-        Zeitpunkt des Abrufs (SQLite)
-        Primary ID erzeugen
-        
-        Erledigt:
-        feed.title
-        feed.link
-        '''
-    else:
-        logging.info(f'HTTP Status ist {d["status"]}')
+            # Gehe durch die Feed Einträge.
+            for x in d['entries']:
+                # print(json.dumps(x, indent=4, sort_keys=True))
+                print(x['title'])
+                print(x['link'])
+            ''' 
+            Offen:
+            URL-ID
+            Zeitpunkt des Abrufs (SQLite)
+            Primary ID erzeugen
+            
+            Erledigt:
+            feed.title
+            feed.link
+            '''
+        else:
+            logging.info(f'HTTP Status ist {d["status"]}')
 
     # Async stuff
     sites = [
@@ -68,6 +68,13 @@ if __name__ == "__main__":
     start_time = time.time()
 
     # Retrieve all elements from the listed feeds
-    entries = asyncio.get_event_loop().run_until_complete(download_all_sites(sites))
+    feeds = asyncio.get_event_loop().run_until_complete(download_all_sites(sites))
     duration = time.time() - start_time
     print(f"Downloaded {len(sites)} sites in {duration} seconds")
+
+    # Iterateover all the feeds
+    for feed in feeds:
+        # Access the entries within each feed
+        for entry in feed['entries']:
+            # Access the data within the entry like title or author.
+            print(entry)
