@@ -2,6 +2,8 @@ import asyncio
 import json
 import logging
 import time
+from newspaper import Article
+import sqlite3
 
 import aiohttp
 import feedparser
@@ -27,6 +29,10 @@ async def download_all_sites(sites):
 
 if __name__ == "__main__":
 
+    # DB Connection
+    conn = sqlite3.connect('postmortem.db', check_same_thread=False)
+    c = conn.cursor()
+
     # Logging Handler
     # Configure logging
     logging.basicConfig(format='[%(levelname)s]: %(asctime)s %(message)s', datefmt='%d.%m.%Y %H:%M:%S',
@@ -47,12 +53,12 @@ if __name__ == "__main__":
                 # print(json.dumps(x, indent=4, sort_keys=True))
                 print(x['title'])
                 print(x['link'])
-            ''' 
+            '''
             Offen:
             URL-ID
             Zeitpunkt des Abrufs (SQLite)
             Primary ID erzeugen
-            
+
             Erledigt:
             feed.title
             feed.link
@@ -72,9 +78,34 @@ if __name__ == "__main__":
     duration = time.time() - start_time
     print(f"Downloaded {len(sites)} sites in {duration} seconds")
 
+    c.execute('select title from Postmortems;')
+
+    # Fetch all rows
+    try:
+        postmortem_titles = c.fetchall()
+        logging.debug(f'Query returned: {postmortem_titles}')
+    except sqlite3.Error as sqlite_error:
+        logging.critical(
+            f'Error occured while retrieving all rows: {sqlite_error}')
+
+    article_list = list()
+
     # Iterateover all the feeds
     for feed in feeds:
         # Access the entries within each feed
         for entry in feed['entries']:
-            # Access the data within the entry like title or author.
-            print(entry)
+
+            # Check if the title is within our database, if not download and save the postmortem.
+            if entry['title'] not in postmortem_titles:
+                logging.debug(
+                    f"Article {entry['title']} not in database, downloading it from {entry['link']}")
+                # Download the article
+                article = Article(entry['link'])
+                article.download()
+                article.parse()
+
+                # We need the url, the content, the title and keywords. But watch out, keywords may be an empty list!
+                article_list.append((entry['link'], entry['title'],
+                                     article.text, article.keywords))
+
+    print(article_list)
