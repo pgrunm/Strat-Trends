@@ -117,6 +117,7 @@ class Postmortem(BotPlugin):
             CREATE TABLE "Postmortems" (
             "content"	TEXT,
             "url"	TEXT,
+            "title"	TEXT,
             "fk_source_id"	INTEGER,
             "postmortem_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
             FOREIGN KEY("fk_source_id") REFERENCES "Sources"("source_id"));
