@@ -3,3 +3,4 @@ errbot
 python-telegram-bot
 feedparser
 pytest
+ratelimit
