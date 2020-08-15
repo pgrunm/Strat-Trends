@@ -301,8 +301,9 @@ class Postmortem(BotPlugin):
 
         # Save the data to the database
         try:
-            self.c.executemany(
-                'INSERT INTO Postmortems (content, fk_source_id, url, title) VALUES (?,?,?,?);', articles)
+            self.c.executemany('''
+                INSERT INTO Postmortems (content, fk_source_id, url, title) 
+                VALUES (?,?,?,?);''', articles)
             self.conn.commit()
         except sqlite3.Error as sqlite_error:
             logging.critical(
