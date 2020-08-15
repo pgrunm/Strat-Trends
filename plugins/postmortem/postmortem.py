@@ -259,9 +259,9 @@ class Postmortem(BotPlugin):
         self.c.execute('select url from sources;')
         try:
             sites = self.c.fetchall()
-            self.logging.debug(f'Query returned: {sites}')
+            self.log.debug(f'Query returned: {sites}')
         except sqlite3.Error as sqlite_error:
-            self.logging.critical(
+            self.log.critical(
                 f'Error occured while retrieving all rows: {sqlite_error}')
 
         feeds = asyncio.get_event_loop().run_until_complete(self.download_all_sites(sites))
@@ -273,9 +273,9 @@ class Postmortem(BotPlugin):
         # Fetch all postmortem title rows
         try:
             postmortem_titles = self.c.fetchall()
-            self.logging.debug(f'Query returned: {postmortem_titles}')
+            self.log.debug(f'Query returned: {postmortem_titles}')
         except sqlite3.Error as sqlite_error:
-            self.logging.critical(
+            self.log.critical(
                 f'Error occured while retrieving all rows: {sqlite_error}')
 
         # Need a dictionary to determine what site has which id
@@ -283,14 +283,14 @@ class Postmortem(BotPlugin):
         self.c.execute('select source_id, url from Sources;')
         try:
             feed_urls = self.c.fetchall()
-            self.logging.debug(f'Query returned: {feed_urls}')
+            self.log.debug(f'Query returned: {feed_urls}')
         except sqlite3.Error as sqlite_error:
-            self.logging.critical(
+            self.log.critical(
                 f'Error occured while retrieving all rows: {sqlite_error}')
 
         # Fill the dictionary
         for source_id, url in feed_urls:
-            self.logging.debug(
+            self.log.debug(
                 f'Adding the url {url} as key for source id {source_id}')
             feed_url_dict[url] = source_id
 
@@ -307,7 +307,7 @@ class Postmortem(BotPlugin):
                 VALUES (?,?,?,?);''', articles)
             self.conn.commit()
         except sqlite3.Error as sqlite_error:
-            self.logging.critical(
+            self.log.critical(
                 f'Error occured while inserting rows: {sqlite_error}')
 
         print(
@@ -338,7 +338,7 @@ class Postmortem(BotPlugin):
                 source_id = feed_url_dict[feed.href]
                 # Check if the title is within our database, if not download and save the postmortem.
                 if entry['title'] not in postmortem_titles:
-                    self.logging.debug(
+                    self.log.debug(
                         f"Article {entry['title']} not in database, downloading it from {entry['link']}")
                     # Download the article
                     tasks.append(asyncio.ensure_future(
