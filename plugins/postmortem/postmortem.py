@@ -1,10 +1,18 @@
+import asyncio
+import json
+import logging
 import sqlite3
+import time
+from urllib.parse import urlparse
 
+import aiohttp
 import certifi
+import feedparser
+import newspaper as n
 import urllib3
 from errbot import BotPlugin, arg_botcmd, botcmd, logging, webhook
-import asyncio
-import feedparser
+from newspaper import Article
+from ratelimit import limits, sleep_and_retry
 
 
 class Postmortem(BotPlugin):
@@ -245,23 +253,63 @@ class Postmortem(BotPlugin):
         """
         A command to retrieve all currently subscribed feeds.
         """
-        self.c.execute('select source_id, url from Sources;')
+        start_time = time.time()
 
-        # Fetch all rows
+        # Fetch all feed sources
+        self.c.execute('select url from sources;')
         try:
-            query = self.c.fetchall()
-            self.log.debug(f'Query returned: {query}')
+            sites = self.c.fetchall()
+            logging.debug(f'Query returned: {sites}')
         except sqlite3.Error as sqlite_error:
-            self.log.critical(
+            logging.critical(
                 f'Error occured while retrieving all rows: {sqlite_error}')
 
-        # Download the Entries
-        feeds = asyncio.new_event_loop().run_until_complete(
-            Postmortem.retrieve_feeds(query))
-        self.log.debug(f'Downloaded entries: {len(feeds)}')
+        feeds = asyncio.get_event_loop().run_until_complete(self.download_all_sites(sites))
+        duration = time.time() - start_time
+        print(f"Downloaded {len(sites)} sites in {duration} seconds")
 
-        # Iterate over the entries...
-        pass
+        self.c.execute('select title from Postmortems;')
+
+        # Fetch all postmortem title rows
+        try:
+            postmortem_titles = self.c.fetchall()
+            logging.debug(f'Query returned: {postmortem_titles}')
+        except sqlite3.Error as sqlite_error:
+            logging.critical(
+                f'Error occured while retrieving all rows: {sqlite_error}')
+
+        # Need a dictionary to determine what site has which id
+        feed_url_dict = dict()
+        self.c.execute('select source_id, url from Sources;')
+        try:
+            feed_urls = self.c.fetchall()
+            logging.debug(f'Query returned: {feed_urls}')
+        except sqlite3.Error as sqlite_error:
+            logging.critical(
+                f'Error occured while retrieving all rows: {sqlite_error}')
+
+        # Fill the dictionary
+        for source_id, url in feed_urls:
+            logging.debug(
+                f'Adding the url {url} as key for source id {source_id}')
+            feed_url_dict[url] = source_id
+
+        articles = asyncio.get_event_loop().run_until_complete(
+            self.download_articles(feeds, postmortem_titles, feed_url_dict))
+        print(
+            f"Downloaded {len(articles)} articles in {time.time() - start_time} seconds")
+
+        # Save the data to the database
+        try:
+            self.c.executemany(
+                'INSERT INTO Postmortems (content, fk_source_id, url, title) VALUES (?,?,?,?);', articles)
+            self.conn.commit()
+        except sqlite3.Error as sqlite_error:
+            logging.critical(
+                f'Error occured while inserting rows: {sqlite_error}')
+
+        print(
+            f"Finished in {time.time() - start_time} seconds")
 
     @staticmethod
     async def retrieve_feeds(sites):
@@ -275,3 +323,47 @@ class Postmortem(BotPlugin):
     @staticmethod
     async def download_site(url):
         return feedparser.parse(url)
+
+    async def download_articles(self, article_list, postmortem_titles, feed_url_dict):
+        # List to return
+        tasks = []
+
+        # Iterateover all the feeds
+        for feed in article_list:
+            # Access the entries within each feed
+            for entry in feed['entries']:
+                # Prepare the foreign key of the source id
+                source_id = feed_url_dict[feed.href]
+                # Check if the title is within our database, if not download and save the postmortem.
+                if entry['title'] not in postmortem_titles:
+                    logging.debug(
+                        f"Article {entry['title']} not in database, downloading it from {entry['link']}")
+                    # Download the article
+                    tasks.append(asyncio.ensure_future(
+                        self.download_article(entry, source_id)))
+
+                # We need the url, the content, the title and keywords. But watch out, keywords may be an empty list!
+        return await asyncio.gather(*tasks, return_exceptions=True)
+
+    @sleep_and_retry
+    @limits(calls=5, period=1)
+    async def download_article(self, entry, source_id):
+        article = Article(entry['link'], fetch_images=False, language='de')
+        article.download()
+        article.parse()
+
+        # Parse the keywords
+        article.nlp()
+
+        article.text.replace("'", "")
+
+        # We need the entry, the content, the title and keywords.
+        return (article.text, source_id, entry['link'], entry['title'])
+
+    async def download_all_sites(self, sites):
+        tasks = []
+        for url in sites:
+            task = asyncio.ensure_future(self.download_site(url))
+            tasks.append(task)
+        liste = await asyncio.gather(*tasks, return_exceptions=True)
+        return liste
